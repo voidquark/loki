@@ -39,7 +39,7 @@ The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https:
 Usually, there is no need to change this but rather overwrite the value in `host_vars` or `group_vars` if required.
 
 ```yaml
-loki_version: "latest"`
+loki_version: "latest"
 ```
 The version of Loki to download and deploy. Supported standard version "2.8.2" format or "latest".
 
