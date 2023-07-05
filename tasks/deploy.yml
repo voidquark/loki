@@ -1,0 +1,134 @@
+---
+# tasks file for loki deployment
+
+- name: Obtain the latest version from the Loki GitHub repo
+  block:
+    - name: Scrape Github API endpoint to obtain latest Loki version
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/grafana/loki/releases/latest"
+        method: GET
+        body_format: json
+      become: false
+      delegate_to: localhost
+      run_once: true
+      register: __github_latest_version
+
+    - name: Latest available Loki version
+      ansible.builtin.set_fact:
+        loki_version: "{{ __github_latest_version.json.tag_name | regex_replace('^v?(\\d+\\.\\d+\\.\\d+)$', '\\1') }}"
+  when: loki_version == "latest"
+
+- name: Verify current deployed version
+  block:
+    - name: Check if Loki binary is present
+      ansible.builtin.stat:
+        path: "/usr/bin/loki"
+      register: __already_deployed
+
+    - name: Obtain current deployed Loki version
+      ansible.builtin.command:
+        cmd: "/usr/bin/loki --version"
+      changed_when: false
+      register: __current_deployed_version
+      when: __already_deployed.stat.exists | bool
+
+- name: Install Loki from remote URL
+  ansible.builtin.dnf:
+    name: "{{ loki_download_url }}"
+    state: present
+    disable_gpg_check: true
+  notify: restart loki
+  when: __current_deployed_version.stdout is not defined or loki_version not in __current_deployed_version.stdout
+
+- name: Check if Loki default dir is present
+  ansible.builtin.stat:
+    path: "/tmp/loki/boltdb-shipper-active"
+  register: __default_structure
+
+- name: Default structure cleanup
+  block:
+    - name: Ensure that Loki is stopped before default cleanup
+      ansible.builtin.systemd:
+        name: loki.service
+        state: stopped
+
+    - name: Remove default configuration from "/tmp/loki" directory
+      ansible.builtin.file:
+        path: "/tmp/loki"
+        state: absent
+  when: __default_structure.stat.exists | bool
+
+- name: Ensure that Loki working path exists
+  ansible.builtin.file:
+    path: "{{ loki_working_path }}"
+    state: directory
+    owner: "loki"
+    group: "loki"
+    mode: "0755"
+
+- name: Template Loki config - /etc/loki/config.yml
+  ansible.builtin.template:
+    src: "config.yml.j2"
+    dest: "/etc/loki/config.yml"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    validate: "/usr/bin/loki --verify-config -config.file %s"
+  notify: restart loki
+
+- name: Ensure that Loki rule path exists
+  ansible.builtin.file:
+    path: "{{ loki_ruler_alert_path }}"
+    state: directory
+    owner: "loki"
+    group: "loki"
+    mode: "0750"
+  when:
+    - loki_ruler_alert_path is defined
+    - loki_ruler is defined
+
+- name: Template Loki Rule File
+  ansible.builtin.template:
+    src: "rules.yml.j2"
+    dest: "{{ loki_ruler_alert_path }}/rules.yml"
+    owner: "loki"
+    group: "loki"
+    mode: "0644"
+  notify: restart loki
+  when:
+    - loki_ruler_alerts is defined
+    - loki_ruler_alert_path is defined
+    - loki_ruler is defined
+
+- name: Enable firewalld rule to expose Loki {{ loki_http_listen_port }}/tcp port
+  ansible.posix.firewalld:
+    immediate: true
+    permanent: true
+    port: "{{ loki_http_listen_port }}/tcp"
+    state: enabled
+  when: loki_expose_port | bool
+
+- name: Ensure that Loki {{ loki_http_listen_port }}/tcp port - firewalld rule is not present
+  ansible.posix.firewalld:
+    immediate: true
+    permanent: true
+    port: "{{ loki_http_listen_port }}/tcp"
+    state: disabled
+  when: not loki_expose_port | bool
+
+- name: Flush handlers after deployment
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure that Loki is started
+  ansible.builtin.systemd:
+    name: loki.service
+    state: started
+
+- name: Verify that Loki URL is responding
+  ansible.builtin.uri:
+    url: "http://0.0.0.0:{{ loki_http_listen_port }}/ready"
+    method: GET
+  register: loki_verify_url_status_code
+  retries: 5
+  delay: 8
+  until: loki_verify_url_status_code.status == 200
