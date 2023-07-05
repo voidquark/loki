@@ -1,5 +1,7 @@
 # Ansible role - Loki
 
+[![License](https://img.shields.io/github/license/voidquark/loki)](LICENSE)
+
 The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https://grafana.com/oss/loki/), the log aggregation system. Role is tailored for systems from the Red Hat family (e.g., `RHEL`, `RockyLinux`, `AlmaLinux`, etc.).
 
 **🔑 Key Features**
