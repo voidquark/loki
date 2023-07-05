@@ -196,7 +196,7 @@ loki_ruler_alerts:
       annotations:
         summary: "{% raw %}SSH authentication failure (instance {{ $labels.instance }}).{% endraw %}"
 ```
-Example alerting rule. You can feed multiple alerting rules. Alerting rules are not templated by default!
+Example alerting rule configuration. You can add multiple alerting rules to suit your requirements. Please note that the alerting rules are not templated by default
 
 ### **Additional Config Variables for `/etc/loki/config.yml`**
 (not set by default)
