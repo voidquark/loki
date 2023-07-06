@@ -126,7 +126,7 @@
 
 - name: Verify that Loki URL is responding
   ansible.builtin.uri:
-    url: "http://0.0.0.0:{{ loki_http_listen_port }}/ready"
+    url: "http://{{ loki_http_listen_address }}:{{ loki_http_listen_port }}/ready"
     method: GET
   register: loki_verify_url_status_code
   retries: 5
