@@ -19,6 +19,7 @@
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
     state: disabled
+  ignore_errors: true
 
 - name: Remove Loki directories"
   ansible.builtin.file:
