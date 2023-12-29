@@ -100,13 +100,18 @@
     - loki_ruler_alert_path is defined
     - loki_ruler is defined
 
+- name: Get firewalld state
+  ansible.builtin.systemd:
+    name: "firewalld"
+  register: __firewalld_service_state
+
 - name: Enable firewalld rule to expose Loki {{ loki_http_listen_port }}/tcp port
   ansible.posix.firewalld:
     immediate: true
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
     state: enabled
-  when: loki_expose_port | bool
+  when: __firewalld_service_state.status.ActiveState == "active" and loki_expose_port | bool
 
 - name: Ensure that Loki {{ loki_http_listen_port }}/tcp port - firewalld rule is not present
   ansible.posix.firewalld:
@@ -114,7 +119,7 @@
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
     state: disabled
-  when: not loki_expose_port | bool
+  when: __firewalld_service_state.status.ActiveState == "active" and not loki_expose_port | bool
 
 - name: Flush handlers after deployment
   ansible.builtin.meta: flush_handlers
@@ -132,3 +137,4 @@
   retries: 5
   delay: 8
   until: loki_verify_url_status_code.status == 200
+  when: loki_expose_port | bool
