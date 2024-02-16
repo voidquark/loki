@@ -97,6 +97,7 @@ loki_analytics:
 # loki_index_gateway:
 # loki_storage_config:
 # loki_chunk_store_config:
+# loki_compactor:
 # loki_limits_config:
 # loki_frontend_worker:
 # loki_table_manager:
