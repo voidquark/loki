@@ -41,7 +41,7 @@ Usually, there is no need to change this but rather overwrite the value in `host
 ```yaml
 loki_version: "latest"
 ```
-The version of Loki to download and deploy. Supported standard version "2.8.2" format or "latest".
+The version of Loki to download and deploy. Supported standard version "2.9.5" format or "latest".
 
 
 ```yaml
