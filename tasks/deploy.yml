@@ -1,6 +1,19 @@
 ---
 # tasks file for loki deployment
 
+- name: Create Loki group
+  ansible.builtin.group:
+    name: loki
+    state: present
+
+- name: Create Loki user and add to Loki group
+  ansible.builtin.user:
+    name: loki
+    group: loki
+    createhome: false
+    system: false
+    state: present
+
 - name: Obtain the latest version from the Loki GitHub repo
   block:
     - name: Scrape Github API endpoint to obtain latest Loki version
@@ -32,13 +45,32 @@
       register: __current_deployed_version
       when: __already_deployed.stat.exists | bool
 
-- name: Install Loki from remote URL
-  ansible.builtin.dnf:
-    name: "{{ loki_download_url }}"
+- name: Install Loki from remote URL on RedHat
+  ansible.builtin.yum:
+    name: "{{ loki_rpm_download_url }}"
     state: present
     disable_gpg_check: true
+  when:
+    - ansible_os_family == "RedHat"
+    - (__current_deployed_version.stdout is not defined) or (loki_version not in __current_deployed_version.stdout)
   notify: restart loki
-  when: __current_deployed_version.stdout is not defined or loki_version not in __current_deployed_version.stdout
+
+- name: Download Loki .deb package for Debian
+  ansible.builtin.get_url:
+    url: "{{ loki_deb_download_url }}"
+    dest: "/tmp/loki.deb"
+    mode: 777
+  when:
+    - ansible_os_family == "Debian"
+    - (__current_deployed_version.stdout is not defined) or (loki_version not in __current_deployed_version.stdout)
+
+- name: Install Loki from downloaded .deb package on Debian
+  ansible.builtin.apt:
+    deb: "/tmp/loki.deb"
+  when:
+    - ansible_os_family == "Debian"
+    - (__current_deployed_version.stdout is not defined) or (loki_version not in __current_deployed_version.stdout)
+  notify: restart loki
 
 - name: Check if Loki default dir is present
   ansible.builtin.stat:
@@ -105,7 +137,7 @@
     name: "firewalld"
   register: __firewalld_service_state
 
-- name: Enable firewalld rule to expose Loki {{ loki_http_listen_port }}/tcp port
+- name: Enable firewalld rule to expose Loki tcp port {{ loki_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true
@@ -113,7 +145,7 @@
     state: enabled
   when: __firewalld_service_state.status.ActiveState == "active" and loki_expose_port | bool
 
-- name: Ensure that Loki {{ loki_http_listen_port }}/tcp port - firewalld rule is not present
+- name: Ensure that Loki tcp port - firewalld rule is not present - {{ loki_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true
