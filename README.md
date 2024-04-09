@@ -41,7 +41,7 @@ Usually, there is no need to change this but rather overwrite the value in `host
 ```yaml
 loki_version: "latest"
 ```
-The version of Loki to download and deploy. Supported standard version "2.9.5" format or "latest".
+The version of Loki to download and deploy. Supported standard version "3.0.0" format or "latest".
 
 
 ```yaml
@@ -139,7 +139,7 @@ loki_schema_config:
     - from: 2020-10-24
       store: boltdb-shipper
       object_store: filesystem
-      schema: v11
+      schema: v13
       index:
         prefix: index_
         period: 24h
@@ -220,6 +220,7 @@ Below variables allow you to extend Loki configuration to fit your needs. Always
 | `loki_table_manager` | The `table_manager` block configures the table manager for retention. 📚 [documentation](https://grafana.com/docs/loki/latest/configuration/#table_manager)
 | `loki_memberlist` | Configuration for memberlist client. Only applies if the selected kvstore is memberlist. 📚 [documentation](https://grafana.com/docs/loki/latest/configuration/#memberlist)
 | `loki_runtime_config` | Configuration for `runtime config` module, responsible for reloading runtime configuration file. 📚 [documentation](https://grafana.com/docs/loki/latest/configuration/#runtime_config)
+| `loki_operational_config` | These are values which allow you to control aspects of Loki’s operation, most commonly used for controlling types of higher verbosity logging, the values here can be overridden in the configs section of the `runtime_config` file. 📚 [documentation](https://grafana.com/docs/loki/latest/configure/#operational_config)
 | `loki_tracing` | Configuration for tracing. 📚 [documentation](https://grafana.com/docs/loki/latest/configuration/#tracing)
 
 ## Dependencies
