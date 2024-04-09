@@ -2,6 +2,7 @@
 # tasks file for loki deployment
 
 - name: Obtain the latest version from the Loki GitHub repo
+  when: loki_version == "latest"
   block:
     - name: Scrape Github API endpoint to obtain latest Loki version
       ansible.builtin.uri:
@@ -16,7 +17,6 @@
     - name: Latest available Loki version
       ansible.builtin.set_fact:
         loki_version: "{{ __github_latest_version.json.tag_name | regex_replace('^v?(\\d+\\.\\d+\\.\\d+)$', '\\1') }}"
-  when: loki_version == "latest"
 
 - name: Verify current deployed version
   block:
@@ -46,6 +46,7 @@
   register: __default_structure
 
 - name: Default structure cleanup
+  when: __default_structure.stat.exists | bool
   block:
     - name: Ensure that Loki is stopped before default cleanup
       ansible.builtin.systemd:
@@ -56,7 +57,6 @@
       ansible.builtin.file:
         path: "/tmp/loki"
         state: absent
-  when: __default_structure.stat.exists | bool
 
 - name: Ensure that Loki working path exists
   ansible.builtin.file:
@@ -105,7 +105,7 @@
     name: "firewalld"
   register: __firewalld_service_state
 
-- name: Enable firewalld rule to expose Loki {{ loki_http_listen_port }}/tcp port
+- name: Enable firewalld rule to expose Loki tcp port {{ loki_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true
@@ -113,7 +113,7 @@
     state: enabled
   when: __firewalld_service_state.status.ActiveState == "active" and loki_expose_port | bool
 
-- name: Ensure that Loki {{ loki_http_listen_port }}/tcp port - firewalld rule is not present
+- name: Ensure that Loki firewalld rule is not present - tcp port {{ loki_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true

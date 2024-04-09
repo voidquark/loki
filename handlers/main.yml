@@ -6,3 +6,4 @@
     name: loki.service
     state: restarted
     enabled: true
+
