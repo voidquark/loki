@@ -13,7 +13,7 @@
     state: absent
     autoremove: true
 
-- name: Ensure that Loki {{ loki_http_listen_port }}/tcp port - firewalld rule is not present
+- name: Ensure that Loki firewalld rule is not present - tcp port {{ loki_http_listen_port }}
   ansible.posix.firewalld:
     immediate: true
     permanent: true
@@ -41,3 +41,4 @@
   ansible.builtin.group:
     name: "loki"
     state: absent
+

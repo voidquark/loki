@@ -81,6 +81,10 @@ memberlist:
 runtime_config:
   {{ loki_runtime_config | to_nice_yaml(indent=2,sort_keys=False) | indent(2, False) }}
 {% endif %}
+{% if operational_config is defined %}
+operational_config:
+  {{ loki_operational_config | to_nice_yaml(indent=2,sort_keys=False) | indent(2, False) }}
+{% endif %}
 {% if loki_tracing is defined %}
 tracing:
   {{ loki_tracing | to_nice_yaml(indent=2,sort_keys=False) | indent(2, False) }}
