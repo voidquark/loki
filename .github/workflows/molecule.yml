@@ -23,8 +23,6 @@ jobs:
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v4
-        with:
-          path: 'voidquark.loki'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
@@ -35,7 +33,7 @@ jobs:
         run: pip3 install ansible molecule molecule-plugins[docker] docker
 
       - name: Test
-        run: ls -l
+        run: ls -l && pwd
 
       - name: Run Molecule tests.
         run: molecule test
