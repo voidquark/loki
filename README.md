@@ -137,7 +137,7 @@ The `query_range` block configures the query splitting and caching in the Loki q
 loki_schema_config:
   configs:
     - from: 2020-10-24
-      store: boltdb-shipper
+      store: tsdb
       object_store: filesystem
       schema: v13
       index:

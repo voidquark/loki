@@ -2,7 +2,7 @@
 # tasks file for loki uninstall
 
 - name: Stop Loki service
-  ansible.builtin.systemd: # noqa ignore-errors
+  ansible.builtin.systemd:  # noqa ignore-errors
     name: loki
     state: stopped
   ignore_errors: true
@@ -14,7 +14,7 @@
     autoremove: true
 
 - name: Ensure that Loki firewalld rule is not present - tcp port {{ loki_http_listen_port }}
-  ansible.posix.firewalld:
+  ansible.posix.firewalld:  # noqa ignore-errors
     immediate: true
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
@@ -41,4 +41,3 @@
   ansible.builtin.group:
     name: "loki"
     state: absent
-
