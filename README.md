@@ -2,12 +2,11 @@
 
 [![License](https://img.shields.io/github/license/voidquark/loki)](LICENSE)
 
-The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https://grafana.com/oss/loki/), the log aggregation system. Role is tailored for systems from the Red Hat family (e.g., `RHEL`, `RockyLinux`, `AlmaLinux`, etc.).
+The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https://grafana.com/oss/loki/), the log aggregation system. This role is tailored for operating systems such as **RedHat**, **Rocky Linux**, **AlmaLinux**, **Ubuntu**, and **Debian**.
 
 **🔑 Key Features**
-- **📦 Out-of-the-box Deployment**: Get Loki up and running quickly with default configurations that work seamlessly with Red Hat family systems. See [Quick Start](#quick-start) for easy setup.
-- **🧩 Flexible Configuration**: Easily customize Loki's configuration to match your specific requirements.
-- **🧹 Effortless Uninstall**: Completely remove Loki from your system with a single command, ensuring a clean uninstallation.
+- **📦 Out-of-the-box Deployment**: Get Loki up and running quickly with default configurations.
+- **🧹 Effortless Uninstall**: Easily remove Loki from your system using the "loki_uninstall" tag.
 - **🔔 Example Alerting Rules**: Benefit from the included sample Ruler configuration. Utilize the provided example alerting rules as a reference guide for structuring your own rules effectively.
 
 ## Table of Content
@@ -15,20 +14,13 @@ The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https:
 - [Requirements](#requirements)
 - [Role Variables](#role-variables)
 - - [Default Variables - `defaults/main.yml`](#default-variables---defaultsmainyml)
-- - [Default Variables - `defaults/main.yml` for `/etc/loki/config.yml`](#default-variables---defaultsmainyml-for-etclokiconfigyml)
 - - [Alerting Rules Variables](#alerting-rules-variables)
 - - [Additional Config Variables for `/etc/loki/config.yml`](#additional-config-variables-for-etclokiconfigyml)
-- [Dependencies](#dependencies)
 - [Playbook](#playbook)
-- [Quick Start](#quick-start)
-- [License](#license)
-- [Contribution](#contribution)
-- [Author Information](#author-information)
 
 ## Requirements
 
-- Ansible 2.9+
-- `RHEL`/`RockyLinux`/`AlmaLinux` 8+ or compatible distributions
+- Ansible 2.10+
 
 ## Role Variables
 
@@ -36,19 +28,11 @@ The Ansible Loki Role allows you to effortlessly deploy and manage [Loki](https:
 - 🏗️ Upgrading Loki [documentation](https://grafana.com/docs/loki/latest/upgrading/)
 
 ### **Default Variables - `defaults/main.yml`**
-Usually, there is no need to change this but rather overwrite the value in `host_vars` or `group_vars` if required.
 
 ```yaml
 loki_version: "latest"
 ```
 The version of Loki to download and deploy. Supported standard version "3.0.0" format or "latest".
-
-
-```yaml
-loki_arch: "x86_64"
-```
-The architecture for `RPM` package for which Loki is being deployed. Possible values `x86_64`, `aarch64`, `arm`.
-
 
 ```yaml
 loki_http_listen_port: 3100
@@ -61,14 +45,19 @@ loki_http_listen_address: "0.0.0.0"
 The address on which Loki listens for HTTP requests. By default, it listens on all interfaces.
 
 ```yaml
-loki_expose_port: true
+loki_expose_port: false
 ```
-Set to `true` by default, controls whether to add a firewalld rule for exposing the Loki port. When `true`, a firewalld rule is added to allow inbound traffic on the specified Loki port. Set to `false` to ensure that firewalld rule is not present.
+By default, this is set to `false`. It supports only simple `firewalld` configurations. If set to `true`, a firewalld rule is added to expose the TCP `loki_http_listen_port`. If set to `false`, the system ensures that the rule is not present. If the `firewalld.service` is not active, all firewalld tasks are skipped.
 
 ```yaml
-loki_download_url: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-{{ loki_version }}.{{ loki_arch }}.rpm"
+loki_download_url_rpm: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-{{ loki_version }}.{{ __loki_arch }}.rpm"
 ```
 The default download URL for the Loki rpm package from GitHub.
+
+```yaml
+loki_download_url_deb: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki_{{ loki_version }}_{{ __loki_arch }}.deb"
+```
+The default download URL for the Loki deb package from GitHub.
 
 ```yaml
 loki_working_path: "/var/lib/loki"
@@ -80,9 +69,6 @@ loki_ruler_alert_path: "{{ loki_working_path }}/rules/fake"
 ```
 The variable defines the location where the `ruler` configuration `alerts` are stored.
 ⚠️ Please note that the role currently does not support multi-tenancy for alerting, so there is no need to modify this variable for different tenants.
-
-
-### **Default Variables - `defaults/main.yml`** for `/etc/loki/config.yml`
 
 ```yaml
 loki_auth_enabled: false
@@ -232,50 +218,13 @@ No Dependencies
 - playbook
 ```yaml
 - name: Manage loki service
-  hosts: loki
-  gather_facts: false
+  hosts: all
   become: true
   roles:
     - role: voidquark.loki
 ```
 
-## Quick Start
-
-To quickly deploy Loki using this Ansible role, follow these steps:
-
-**1. Set up your project directory structure:**
-```shell
-ansible_structure
-├── playbook
-│   └── function_loki_play.yml # Playbook
-└── inventory
-    ├── group_vars
-    │   └── loki
-    │       └── loki_vars.yml # Overwrite variables in group_vars (optional)
-    ├── hosts
-    └── host_vars
-        └── loki.voidquark.com
-            └── host_vars.yml # Overwrite variables in host_vars (optional)
-```
-**2. Install the Ansible Loki Role from Ansible Galaxy:**
-```shell
-ansible-galaxy install voidquark.loki
-```
-**3. Create your inventory - `inventory/hosts`**
-```shell
-[loki]
-loki.voidquark.com
-```
-**4. Create your playbook - `playbook/function_loki_play.yml`**
-```yaml
-- name: Manage loki service
-  hosts: loki
-  gather_facts: false
-  become: true
-  roles:
-    - role: voidquark.loki
-```
-**5. Execute the playbook**
+- Playbook execution example
 ```shell
 # Deployment
 ansible-playbook -i inventory/hosts playbook/function_loki_play.yml

@@ -1,11 +1,11 @@
 ---
 # defaults file for loki
 loki_version: "latest"
-loki_arch: "x86_64"
 loki_http_listen_port: 3100
 loki_http_listen_address: "0.0.0.0"
-loki_expose_port: true
-loki_download_url: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-{{ loki_version }}.{{ loki_arch }}.rpm"
+loki_expose_port: false
+loki_download_url_rpm: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-{{ loki_version }}.{{ __loki_arch }}.rpm"
+loki_download_url_deb: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki_{{ loki_version }}_{{ __loki_arch }}.deb"
 loki_working_path: "/var/lib/loki"
 loki_ruler_alert_path: "{{ loki_working_path }}/rules/fake"
 
