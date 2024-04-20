@@ -32,13 +32,15 @@
       register: __current_deployed_version
       when: __already_deployed.stat.exists | bool
 
-- name: Install Loki from remote URL
-  ansible.builtin.dnf:
-    name: "{{ loki_download_url }}"
-    state: present
-    disable_gpg_check: true
-  notify: restart loki
-  when: __current_deployed_version.stdout is not defined or loki_version not in __current_deployed_version.stdout
+- name: Include RedHat/Rocky setup
+  ansible.builtin.include_tasks:
+    file: setup-RedHat.yml
+  when: ansible_os_family in ['RedHat', 'Rocky']
+
+- name: Include Debian/Ubuntu setup
+  ansible.builtin.include_tasks:
+    file: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
 
 - name: Check if Loki default dir is present
   ansible.builtin.stat:
@@ -63,7 +65,7 @@
     path: "{{ loki_working_path }}"
     state: directory
     owner: "loki"
-    group: "loki"
+    group: "root"
     mode: "0755"
 
 - name: Template Loki config - /etc/loki/config.yml
@@ -81,7 +83,7 @@
     path: "{{ loki_ruler_alert_path }}"
     state: directory
     owner: "loki"
-    group: "loki"
+    group: "root"
     mode: "0750"
   when:
     - loki_ruler_alert_path is defined
@@ -92,7 +94,7 @@
     src: "rules.yml.j2"
     dest: "{{ loki_ruler_alert_path }}/rules.yml"
     owner: "loki"
-    group: "loki"
+    group: "root"
     mode: "0644"
   notify: restart loki
   when:
@@ -111,7 +113,9 @@
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
     state: enabled
-  when: __firewalld_service_state.status.ActiveState == "active" and loki_expose_port | bool
+  when:
+    - __firewalld_service_state.status.ActiveState == "active"
+    - loki_expose_port | bool
 
 - name: Ensure that Loki firewalld rule is not present - tcp port {{ loki_http_listen_port }}
   ansible.posix.firewalld:
@@ -119,7 +123,9 @@
     permanent: true
     port: "{{ loki_http_listen_port }}/tcp"
     state: disabled
-  when: __firewalld_service_state.status.ActiveState == "active" and not loki_expose_port | bool
+  when:
+    - __firewalld_service_state.status.ActiveState == "active"
+    - not loki_expose_port | bool
 
 - name: Flush handlers after deployment
   ansible.builtin.meta: flush_handlers
