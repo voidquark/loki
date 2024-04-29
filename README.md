@@ -1,4 +1,8 @@
-# Ansible role - Loki
+# ARCHIVED
+
+Role has been migrated to the Grafana Ansible Collection. You can find it at: https://github.com/grafana/grafana-ansible-collection/tree/main/roles/loki
+
+## Ansible role - Loki
 
 [![License](https://img.shields.io/github/license/voidquark/loki)](LICENSE)
 
